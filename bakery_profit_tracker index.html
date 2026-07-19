@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍞 BakeTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: system-ui, sans-serif; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .nav-tab.active { background-color: #fefce8; color: #c2410f; border-bottom: 3px solid #c2410f; font-weight: 600; }
+        .input { width: 100%; padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 16px; font-size: 17px; }
+        .big-number { font-size: 28px; font-weight: 700; }
+        .helper-text { font-size: 12px; color: #854d0e; }
+    </style>
+</head>
+<body class="bg-zinc-50">
+    <!-- Header -->
+    <div class="bg-white border-b sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-11 h-11 bg-amber-600 rounded-2xl flex items-center justify-center text-white text-3xl">🍞</div>
+                <h1 class="text-2xl font-bold">BakeTrack</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="max-w-4xl mx-auto px-4 pt-4 border-b">
+        <div class="flex">
+            <button onclick="showSection('daily')" id="tab-daily" class="nav-tab active flex-1 py-3 text-sm">📅 Daily Tracker</button>
+            <button onclick="showSection('monthly')" id="tab-monthly" class="nav-tab flex-1 py-3 text-sm">📊 Monthly</button>
+            <button onclick="showSection('profit')" id="tab-profit" class="nav-tab flex-1 py-3 text-sm">📈 Profit</button>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 py-6">
+        
+        <!-- DAILY TRACKER -->
+        <div id="section-daily" class="section active">
+            <div class="bg-white rounded-3xl p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-xl">Daily Log</h2>
+                    <select id="view-mode" onchange="changeViewMode()" class="border rounded-2xl px-4 py-2 text-sm">
+                        <option value="daily">Daily View</option>
+                        <option value="weekly">Weekly Summary</option>
+                        <option value="monthly">Monthly Summary</option>
+                    </select>
+                </div>
+
+                <!-- Daily Form -->
+                <div id="daily-form-section">
+                    <div class="mb-4">
+                        <label class="text-sm">Date</label>
+                        <input type="date" id="log-date" class="input">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><label class="text-sm">Breads Made</label><input id="daily-made" type="number" value="0" class="input"></div>
+                        <div><label class="text-sm">Breads Sold</label><input id="daily-sold" type="number" value="0" class="input"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-sm">Flour Used (kg)</label>
+                        <input id="daily-flour" type="number" value="0" class="input">
+                    </div>
+
+                    <!-- Ingredients -->
+                    <div class="mb-4">
+                        <h4 class="font-medium mb-1">Ingredients Used Today (₦)</h4>
+                        <p class="helper-text mb-2">Estimate what you used today. Example: If one yeast pack = ₦4,000 and you used ¼ today, enter ₦1,000.</p>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <input id="daily-sugar" placeholder="Sugar" type="number" value="0" class="input">
+                            <input id="daily-yeast" placeholder="Yeast" type="number" value="0" class="input">
+                            <input id="daily-flavor" placeholder="Flavor" type="number" value="0" class="input">
+                            <input id="daily-eggs" placeholder="Eggs" type="number" value="0" class="input">
+                            <input id="daily-other-ing" placeholder="Other Ingredients" type="number" value="0" class="input col-span-2">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><label class="text-sm">Transport (₦)</label><input id="daily-transport" type="number" value="0" class="input"></div>
+                        <div><label class="text-sm">Gas (₦)</label><input id="daily-gas" type="number" value="0" class="input"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-sm">Selling Price per Bread (₦)</label>
+                        <input id="daily-price" type="number" value="850" class="input">
+                    </div>
+
+                    <div>
+                        <label class="text-sm">Other Expense</label>
+                        <div class="flex gap-3">
+                            <input id="daily-other-desc" placeholder="Description" class="input flex-1">
+                            <input id="daily-other-amt" type="number" placeholder="₦" class="input w-28">
+                        </div>
+                    </div>
+
+                    <button onclick="saveDailyEntry()" class="mt-6 w-full py-4 bg-emerald-600 text-white rounded-2xl font-semibold">
+                        💾 Save This Day
+                    </button>
+                </div>
+
+                <!-- Summary View -->
+                <div id="summary-view" class="hidden mt-6">
+                    <div id="summary-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MONTHLY SUMMARY -->
+        <div id="section-monthly" class="section">
+            <div class="bg-white rounded-3xl p-5">
+                <h2 class="font-bold text-xl mb-4">Monthly Summary</h2>
+                <div id="monthly-content"></div>
+            </div>
+        </div>
+
+        <!-- PROFIT CALCULATOR -->
+        <div id="section-profit" class="section">
+            <div class="bg-white rounded-3xl p-6">
+                <h2 class="text-2xl font-bold mb-6">📈 Profit Calculator</h2>
+                <div class="space-y-5">
+                    <div>
+                        <label>Breads Made (Monthly)</label>
+                        <input id="p-made" type="number" class="input" readonly>
+                    </div>
+                    <div>
+                        <label>Breads Sold</label>
+                        <input id="p-sold" type="number" value="0" oninput="calculateProfit()" class="input">
+                    </div>
+                    <div>
+                        <label>Selling Price per Bread (₦)</label>
+                        <input id="p-price" type="number" value="850" oninput="calculateProfit()" class="input">
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-emerald-50 p-6 rounded-3xl">
+                    <div class="space-y-4">
+                        <div class="flex justify-between"><span>Cost per Bread</span><span id="p-cost" class="font-bold text-xl">₦0</span></div>
+                        <div class="flex justify-between"><span>Profit per Bread</span><span id="p-profit" class="font-bold text-xl text-emerald-700">₦0</span></div>
+                        <div class="flex justify-between"><span>Profit per Bag of Flour</span><span id="p-bag" class="font-bold text-xl text-emerald-700">₦0</span></div>
+                        <div class="text-center pt-4 border-t">
+                            <div class="text-sm">Total Monthly Profit</div>
+                            <div id="p-total" class="big-number text-emerald-700">₦0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dailyEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
+
+        function saveDailyEntry() {
+            const date = document.getElementById('log-date').value || new Date().toISOString().split('T')[0];
+            const price = parseFloat(document.getElementById('daily-price').value) || 850;
+
+            const entry = {
+                date: date,
+                made: parseFloat(document.getElementById('daily-made').value) || 0,
+                sold: parseFloat(document.getElementById('daily-sold').value) || 0,
+                flourKg: parseFloat(document.getElementById('daily-flour').value) || 0,
+                sugar: parseFloat(document.getElementById('daily-sugar').value) || 0,
+                yeast: parseFloat(document.getElementById('daily-yeast').value) || 0,
+                flavor: parseFloat(document.getElementById('daily-flavor').value) || 0,
+                eggs: parseFloat(document.getElementById('daily-eggs').value) || 0,
+                otherIng: parseFloat(document.getElementById('daily-other-ing').value) || 0,
+                transport: parseFloat(document.getElementById('daily-transport').value) || 0,
+                gas: parseFloat(document.getElementById('daily-gas').value) || 0,
+                otherDesc: document.getElementById('daily-other-desc').value || '',
+                otherAmt: parseFloat(document.getElementById('daily-other-amt').value) || 0,
+                sellingPrice: price
+            };
+
+            const totalCost = entry.sugar + entry.yeast + entry.flavor + entry.eggs + entry.otherIng + 
+                              entry.transport + entry.gas + entry.otherAmt;
+            entry.dailyProfit = (entry.sold * price) - totalCost;
+
+            dailyEntries.push(entry);
+            localStorage.setItem('dailyEntries', JSON.stringify(dailyEntries));
+
+            alert(`✅ Day saved!\n\nDaily Profit: ₦${Math.round(entry.dailyProfit).toLocaleString()}`);
+
+            // Clear form
+            ['daily-made','daily-sold','daily-flour','daily-sugar','daily-yeast','daily-flavor','daily-eggs','daily-other-ing','daily-transport','daily-gas','daily-other-desc','daily-other-amt'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+
+        function changeViewMode() {
+            const mode = document.getElementById('view-mode').value;
+            const form = document.getElementById('daily-form-section');
+            const summary = document.getElementById('summary-view');
+
+            if (mode === 'daily') {
+                form.classList.remove('hidden');
+                summary.classList.add('hidden');
+            } else {
+                form.classList.add('hidden');
+                summary.classList.remove('hidden');
+                showSummary(mode);
+            }
+        }
+
+        function showSummary(mode) {
+            const container = document.getElementById('summary-content');
+            container.innerHTML = '';
+
+            const now = new Date();
+            let filtered = dailyEntries.filter(e => {
+                const d = new Date(e.date);
+                if (mode === 'weekly') {
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - now.getDay());
+                    return d >= startOfWeek;
+                } else {
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                }
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-center py-8 text-zinc-400">No entries for this ${mode} yet.</p>`;
+                return;
+            }
+
+            let totals = { made: 0, sold: 0, totalCost: 0, profit: 0 };
+            filtered.forEach(e => {
+                totals.made += e.made;
+                totals.sold += e.sold;
+                const cost = e.sugar + e.yeast + e.flavor + e.eggs + e.otherIng + e.transport + e.gas + e.otherAmt;
+                totals.totalCost += cost;
+                totals.profit += (e.sold * (e.sellingPrice || 850)) - cost;
+            });
+
+            container.innerHTML = `
+                <div class="bg-zinc-50 p-5 rounded-3xl">
+                    <h3 class="font-bold mb-4">${mode.toUpperCase()} SUMMARY</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between"><span>Breads Made</span><span class="font-semibold">${totals.made}</span></div>
+                        <div class="flex justify-between"><span>Breads Sold</span><span class="font-semibold">${totals.sold}</span></div>
+                        <div class="flex justify-between"><span>Total Cost</span><span class="font-semibold">₦${totals.totalCost.toLocaleString()}</span></div>
+                        <div class="flex justify-between text-lg font-bold border-t pt-3"><span>\( {mode} Profit</span><span class="text-emerald-700">₦ \){Math.round(totals.profit).toLocaleString()}</span></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showMonthly() {
+            const container = document.getElementById('monthly-content');
+            const now = new Date();
+            const monthEntries = dailyEntries.filter(e => {
+                const d = new Date(e.date);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+
+            if (monthEntries.length === 0) {
+                container.innerHTML = '<p class="text-center py-8 text-zinc-400">No entries this month yet.</p>';
+                return;
+            }
+
+            let totals = { made: 0, sold: 0, flourKg: 0, sugar: 0, yeast: 0, flavor: 0, eggs: 0, otherIng: 0, transport: 0, gas: 0, other: 0, profit: 0 };
+
+            monthEntries.forEach(e => {
+                totals.made += e.made; totals.sold += e.sold; totals.flourKg += e.flourKg || e.flour || 0;
+                totals.sugar += e.sugar; totals.yeast += e.yeast; totals.flavor += e.flavor;
+                totals.eggs += e.eggs; totals.otherIng += e.otherIng;
+                totals.transport += e.transport; totals.gas += e.gas; totals.other += e.otherAmt;
+                const cost = e.sugar + e.yeast + e.flavor + e.eggs + e.otherIng + e.transport + e.gas + e.otherAmt;
+                totals.profit += (e.sold * (e.sellingPrice || 850)) - cost;
+            });
+
+            container.innerHTML = `
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between"><span>Breads Made</span><span class="font-semibold">${totals.made}</span></div>
+                    <div class="flex justify-between"><span>Breads Sold</span><span class="font-semibold">${totals.sold}</span></div>
+                    <div class="flex justify-between"><span>Flour Used (kg)</span><span class="font-semibold">${totals.flourKg}</span></div>
+                    <div class="flex justify-between"><span>Sugar</span><span>₦${totals.sugar.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span>Yeast</span><span>₦${totals.yeast.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span>Flavor</span><span>₦${totals.flavor.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span>Eggs</span><span>₦${totals.eggs.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span>Other Ingredients</span><span>₦${totals.otherIng.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span>Transport</span><span>₦${totals.transport.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span>Gas</span><span>₦${totals.gas.toLocaleString()}</span></div>
+                    <div class="flex justify-between"><span>Other Expenses</span><span>₦${totals.other.toLocaleString()}</span></div>
+                </div>
+                <div class="mt-6 p-4 bg-emerald-50 rounded-3xl">
+                    <div class="flex justify-between text-lg font-bold"><span>Total Monthly Profit</span><span class="text-emerald-700">₦${Math.round(totals.profit).toLocaleString()}</span></div>
+                </div>
+            `;
+
+            document.getElementById('p-made').value = totals.made;
+        }
+
+        function calculateProfit() {
+            const made = parseFloat(document.getElementById('p-made').value) || 0;
+            const sold = parseFloat(document.getElementById('p-sold').value) || 0;
+            const price = parseFloat(document.getElementById('p-price').value) || 850;
+
+            const now = new Date();
+            const monthEntries = dailyEntries.filter(e => {
+                const d = new Date(e.date);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+
+            let totalCost = 0;
+            monthEntries.forEach(e => {
+                totalCost += e.sugar + e.yeast + e.flavor + e.eggs + e.otherIng + e.transport + e.gas + e.otherAmt;
+            });
+
+            let costPer = 0, profitPer = 0, perBag = 0, totalP = 0;
+            if (made > 0) {
+                costPer = totalCost / made;
+                profitPer = price - costPer;
+                perBag = profitPer * 120; // average breads per bag
+                totalP = profitPer * sold;
+            }
+
+            document.getElementById('p-cost').textContent = '₦' + Math.round(costPer).toLocaleString();
+            document.getElementById('p-profit').textContent = '₦' + Math.round(profitPer).toLocaleString();
+            document.getElementById('p-bag').textContent = '₦' + Math.round(perBag).toLocaleString();
+            document.getElementById('p-total').textContent = '₦' + Math.round(totalP).toLocaleString();
+        }
+
+        function showSection(s) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('section-' + s).classList.add('active');
+            document.getElementById('tab-' + s).classList.add('active');
+
+            if (s === 'monthly') showMonthly();
+            if (s === 'profit') calculateProfit();
+        }
+
+        window.onload = () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('log-date').value = today;
+        };
+    </script>
+</body>
+</html>ofit();
+        }
+
+        window.onload = () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('log-date').value = today;
+        };
+    </script>
+</body>
+</html>   };
+    </script>
+</body>
+</html>ass="bg-white rounded-3xl p-6 border border-zinc-100">
+                        <h4 class="font-semibold mb-4 flex items-center gap-x-2"><i class="fa-solid fa-shopping-cart text-emerald-600"></i> Log Sales</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-zinc-500">Breads sold</label>
+                                <input type="number" id="sale-breads" value="580" class="w-full px-4 py-2.5 border rounded-2xl">
+                            </div>
+                            <div>
+                                <label class="text-xs text-zinc-500">Total revenue (₦)</label>
+                                <input type="number" id="sale-revenue" value="493000" class="w-full px-4 py-2.5 border rounded-2xl">
+                            </div>
+                        </div>
+                        <button onclick="logSale()" class="mt-4 w-full py-2.5 bg-emerald-600 text-white rounded-2xl text-sm font-semibold hover:bg-emerald-700">Record Sale</button>
+                    </div>
+                    
+                    <!-- General Expense -->
+                    <div class="bg-white rounded-3xl p-6 border border-zinc-100">
+                        <h4 class="font-semibold mb-4 flex items-center gap-x-2"><i class="fa-solid fa-receipt text-red-600"></i> Log Other Expense</h4>
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <label class="text-xs text-zinc-500">Category</label>
+                                <select id="expense-category" class="w-full px-4 py-2.5 border rounded-2xl text-sm">
+                                    <option value="Electricity">Electricity</option>
+                                    <option value="Transport">Transport</option>
+                                    <option value="Staff Salary">Staff Salary</option>
+                                    <option value="Other Ingredients">Other Ingredients</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-zinc-500">Amount (₦)</label>
+                                <input type="number" id="expense-amount" value="25000" class="w-full px-4 py-2.5 border rounded-2xl">
+                            </div>
+                        </div>
+                        <input type="text" id="expense-note" placeholder="Note (optional)" class="w-full px-4 py-2.5 border rounded-2xl text-sm mb-3">
+                        <button onclick="logExpense()" class="w-full py-2.5 bg-red-600 text-white rounded-2xl text-sm font-semibold hover:bg-red-700">Log Expense</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="mt-8">
+                <h3 class="font-semibold mb-3">Recent Activity</h3>
+                <div id="recent-activity" class="bg-white rounded-3xl border border-zinc-100 p-4 text-sm max-h-64 overflow-auto">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- REPORTS & MARGINS -->
+        <div id="section-reports" class="section">
+            <div class="mb-6">
+                <h2 class="text-2xl font-semibold">Profit Reports &amp; Margins</h2>
+                <p class="text-zinc-500">Your true cost and profit after all expenses</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+                <!-- Big Numbers -->
+                <div class="bg-white rounded-3xl p-7 border border-zinc-100 col-span-1 lg:col-span-1">
+                    <div class="text-sm text-zinc-500 mb-1">Cost per Bread</div>
+                    <div id="report-cost-per-bread" class="text-5xl font-bold cost-red">₦0</div>
+                    <div class="text-xs text-zinc-500 mt-3">Flour + ingredients + share of fixed costs</div>
+                </div>
+                
+                <div class="bg-white rounded-3xl p-7 border border-emerald-100 col-span-1 lg:col-span-1">
+                    <div class="text-sm text-emerald-600 mb-1">Profit per Bread</div>
+                    <div id="report-profit-per-bread" class="text-5xl font-bold profit-green">₦0</div>
+                    <div class="text-xs text-emerald-700 mt-3">After electricity, transport &amp; staff</div>
+                </div>
+                
+                <div class="bg-white rounded-3xl p-7 border border-emerald-100 col-span-1 lg:col-span-1">
+                    <div class="text-sm text-emerald-600 mb-1">Profit per Flour Bag</div>
+                    <div id="report-profit-per-bag" class="text-5xl font-bold profit-green">₦0</div>
+                    <div class="text-xs text-emerald-700 mt-3">From one full bag of flour</div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-3xl p-7 border border-zinc-100">
+                <h3 class="font-semibold mb-4">Cost Breakdown (per bread)</h3>
+                <div id="cost-breakdown" class="space-y-3 text-sm">
+                    <!-- JS populated -->
+                </div>
+            </div>
+            
+            <div class="mt-6 text-xs text-zinc-500 bg-white p-4 rounded-2xl border">
+                These calculations use the numbers from your <strong>Costs &amp; Settings</strong> tab. 
+                For more accurate period reports, keep logging your purchases, production and sales in the Quick Logs tab.
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#c2410f');
+        }
+        
+        // Data management
+        let data = {
+            inventory: [],
+            expenses: [],
+            productions: [],
+            sales: [],
+            settings: {
+                flourCostPerBag: 28000,
+                breadsPerBag: 120,
+                otherCostPerBread: 180,
+                sellingPricePerBread: 850,
+                monthlyElectricity: 65000,
+                monthlyTransport: 45000,
+                monthlyStaff: 280000,
+                estimatedBreadsPerMonth: 4500
+            }
+        };
+        
+        function saveData() {
+            localStorage.setItem('bakeryData', JSON.stringify(data));
+        }
+        
+        function loadData() {
+            const saved = localStorage.getItem('bakeryData');
+            if (saved) {
+                data = JSON.parse(saved);
+            } else {
+                // Default inventory
+                data.inventory = [
+                    { id: Date.now(), name: "Flour (50kg bags)", stock: 12, unitCost: 28000, unit: "bag" },
+                    { id: Date.now() + 1, name: "Sugar", stock: 25, unitCost: 4500, unit: "kg" },
+                    { id: Date.now() + 2, name: "Yeast", stock: 8, unitCost: 12000, unit: "kg" }
+                ];
+                saveData();
+            }
+        }
+        
+        function updateSettings() {
+            data.settings.flourCostPerBag = parseFloat(document.getElementById('flour-cost').value) || 0;
+            data.settings.breadsPerBag = parseFloat(document.getElementById('breads-per-bag').value) || 1;
+            data.settings.otherCostPerBread = parseFloat(document.getElementById('other-cost').value) || 0;
+            data.settings.sellingPricePerBread = parseFloat(document.getElementById('selling-price').value) || 0;
+            data.settings.monthlyElectricity = parseFloat(document.getElementById('electricity').value) || 0;
+            data.settings.monthlyTransport = parseFloat(document.getElementById('transport').value) || 0;
+            data.settings.monthlyStaff = parseFloat(document.getElementById('staff').value) || 0;
+            data.settings.estimatedBreadsPerMonth = parseFloat(document.getElementById('est-breads').value) || 1;
+            
+            saveData();
+            updateDashboard();
+            updateReports();
+        }
+        
+        function loadSettingsIntoForm() {
+            const s = data.settings;
+            document.getElementById('flour-cost').value = s.flourCostPerBag;
+            document.getElementById('breads-per-bag').value = s.breadsPerBag;
+            document.getElementById('other-cost').value = s.otherCostPerBread;
+            document.getElementById('selling-price').value = s.sellingPricePerBread;
+            document.getElementById('electricity').value = s.monthlyElectricity;
+            document.getElementById('transport').value = s.monthlyTransport;
+            document.getElementById('staff').value = s.monthlyStaff;
+            document.getElementById('est-breads').value = s.estimatedBreadsPerMonth;
+        }
+        
+        // Calculations
+        function calculateMetrics() {
+            const s = data.settings;
+            
+            const flourCostPerBread = s.flourCostPerBag / s.breadsPerBag;
+            const fixedMonthly = s.monthlyElectricity + s.monthlyTransport + s.monthlyStaff;
+            const fixedCostPerBread = fixedMonthly / s.estimatedBreadsPerMonth;
+            
+            const totalCostPerBread = flourCostPerBread + s.otherCostPerBread + fixedCostPerBread;
+            const profitPerBread = s.sellingPricePerBread - totalCostPerBread;
+            const profitPerBag = profitPerBread * s.breadsPerBag;
+            
+            const monthlyProfit = profitPerBread * s.estimatedBreadsPerMonth;
+            
+            return {
+                flourCostPerBread: Math.round(flourCostPerBread),
+                fixedCostPerBread: Math.round(fixedCostPerBread),
+                totalCostPerBread: Math.round(totalCostPerBread),
+                profitPerBread: Math.round(profitPerBread),
+                profitPerBag: Math.round(profitPerBag),
+                monthlyProfit: Math.round(monthlyProfit)
+            };
+        }
+        
+        function updateDashboard() {
+            const metrics = calculateMetrics();
+            
+            // Flour stock
+            const flourItem = data.inventory.find(i => i.name.toLowerCase().includes('flour'));
+            const flourStock = flourItem ? flourItem.stock : 0;
+            document.getElementById('dash-flour-stock').textContent = flourStock;
+            
+            if (flourItem) {
+                const value = flourStock * flourItem.unitCost;
+                document.getElementById('dash-flour-value').innerHTML = `₦${value.toLocaleString()} total value`;
+            }
+            
+            // Metrics
+            document.getElementById('dash-profit-per-bread').innerHTML = `₦${metrics.profitPerBread.toLocaleString()}`;
+            document.getElementById('dash-profit-per-bag').innerHTML = `₦${metrics.profitPerBag.toLocaleString()}`;
+            document.getElementById('dash-monthly-profit').innerHTML = `₦${metrics.monthlyProfit.toLocaleString()}`;
+        }
+        
+        function updateReports() {
+            const m = calculateMetrics();
+            
+            document.getElementById('report-cost-per-bread').innerHTML = `₦${m.totalCostPerBread.toLocaleString()}`;
+            document.getElementById('report-profit-per-bread').innerHTML = `₦${m.profitPerBread.toLocaleString()}`;
+            document.getElementById('report-profit-per-bag').innerHTML = `₦${m.profitPerBag.toLocaleString()}`;
+            
+            // Breakdown
+            const breakdownHTML = `
+                <div class="flex justify-between items-center py-2 border-b">
+                    <span class="text-zinc-600">Flour cost per bread</span>
+                    <span class="font-semibold">₦${m.flourCostPerBread.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b">
+                    <span class="text-zinc-600">Other ingredients per bread</span>
+                    <span class="font-semibold">₦${data.settings.otherCostPerBread.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b">
+                    <span class="text-zinc-600">Share of fixed costs (electricity + transport + staff)</span>
+                    <span class="font-semibold">₦${m.fixedCostPerBread.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center py-3 font-bold text-lg border-t mt-2">
+                    <span>Total Cost per Bread</span>
+                    <span class="cost-red">₦${m.totalCostPerBread.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between items-center py-1 text-emerald-700 font-bold">
+                    <span>Selling Price</span>
+                    <span>₦${data.settings.sellingPricePerBread.toLocaleString()}</span>
+                </div>
+            `;
+            document.getElementById('cost-breakdown').innerHTML = breakdownHTML;
+        }
+        
+        // Inventory functions
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-table');
+            tbody.innerHTML = '';
+            
+            data.inventory.forEach(item => {
+                const totalValue = item.stock * item.unitCost;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium">${item.name}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="font-semibold">${item.stock}</span> 
+                        <span class="text-xs text-zinc-500">${item.unit}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">₦${item.unitCost.toLocaleString()}</td>
+                    <td class="px-6 py-4 text-center font-semibold">₦${totalValue.toLocaleString()}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center gap-x-2">
+                            <button onclick="adjustStock(${item.id}, 1)" class="px-3 py-1 text-xs bg-emerald-100 text-emerald-700 rounded-xl hover:bg-emerald-200">+</button>
+                            <button onclick="adjustStock(${item.id}, -1)" class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-xl hover:bg-red-200">-</button>
+                            <button onclick="deleteInventoryItem(${item.id})" class="px-3 py-1 text-xs bg-zinc-100 text-zinc-600 rounded-xl hover:bg-zinc-200">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function adjustStock(id, change) {
+            const item = data.inventory.find(i => i.id === id);
+            if (!item) return;
+            
+            item.stock = Math.max(0, item.stock + change);
+            saveData();
+            renderInventory();
+            updateDashboard();
+        }
+        
+        function deleteInventoryItem(id) {
+            if (!confirm('Delete this inventory item?')) return;
+            data.inventory = data.inventory.filter(i => i.id !== id);
+            saveData();
+            renderInventory();
+        }
+        
+        function showAddItemModal() {
+            const name = prompt('Item name (e.g. Butter, Milk):');
+            if (!name) return;
+            
+            const stock = parseFloat(prompt('Current stock quantity:')) || 0;
+            const unitCost = parseFloat(prompt('Cost per unit (₦):')) || 0;
+            const unit = prompt('Unit (bag / kg / piece):') || 'unit';
+            
+            data.inventory.push({
+                id: Date.now(),
+                name: name,
+                stock: stock,
+                unitCost: unitCost,
+                unit: unit
+            });
+            
+            saveData();
+            renderInventory();
+        }
+        
+        // Logging functions
+        function logFlourPurchase() {
+            const bags = parseFloat(document.getElementById('purchase-bags').value) || 0;
+            const cost = parseFloat(document.getElementById('purchase-cost').value) || 0;
+            
+            if (bags <= 0 || cost <= 0) {
+                alert('Please enter valid bags and cost');
+                return;
+            }
+            
+            // Update or create flour item
+            let flour = data.inventory.find(i => i.name.toLowerCase().includes('flour'));
+            if (!flour) {
+                flour = { id: Date.now(), name: "Flour (50kg bags)", stock: 0, unitCost: Math.round(cost / bags), unit: "bag" };
+                data.inventory.push(flour);
+            } else {
+                flour.stock += bags;
+                // Update average cost
+                const oldValue = flour.stock * flour.unitCost;
+                const newValue = cost;
+                flour.unitCost = Math.round((oldValue + newValue) / (flour.stock + bags));
+            }
+            
+            // Log expense
+            data.expenses.unshift({
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                category: "Flour Purchase",
+                amount: cost,
+                note: `${bags} bags of flour`
+            });
+            
+            saveData();
+            renderInventory();
+            updateDashboard();
+            renderRecentActivity();
+            alert(`Added ${bags} bags of flour. Stock updated!`);
+            
+            // Clear form
+            document.getElementById('purchase-bags').value = '';
+            document.getElementById('purchase-cost').value = '';
+        }
+        
+        function logProduction() {
+            const breads = parseFloat(document.getElementById('prod-breads').value) || 0;
+            const flourUsed = parseFloat(document.getElementById('prod-flour').value) || 0;
+            
+            if (breads <= 0) return alert('Enter breads produced');
+            
+            // Deduct flour if exists
+            const flour = data.inventory.find(i => i.name.toLowerCase().includes('flour'));
+            if (flour && flourUsed > 0) {
+                flour.stock = Math.max(0, flour.stock - flourUsed);
+            }
+            
+            data.productions.unshift({
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                breads: breads,
+                flourUsed: flourUsed
+            });
+            
+            saveData();
+            renderInventory();
+            updateDashboard();
+            renderRecentActivity();
+            alert(`Recorded production of ${breads} breads`);
+            
+            document.getElementById('prod-breads').value = '';
+            document.getElementById('prod-flour').value = '';
+        }
+        
+        function logSale() {
+            const breads = parseFloat(document.getElementById('sale-breads').value) || 0;
+            const revenue = parseFloat(document.getElementById('sale-revenue').value) || 0;
+            
+            if (breads <= 0) return alert('Enter breads sold');
+            
+            data.sales.unshift({
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                breads: breads,
+                revenue: revenue
+            });
+            
+            saveData();
+            renderRecentActivity();
+            updateDashboard();
+            alert(`Recorded sale of ${breads} breads`);
+            
+            document.getElementById('sale-breads').value = '';
+            document.getElementById('sale-revenue').value = '';
+        }
+        
+        function logExpense() {
+            const category = document.getElementById('expense-category').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value) || 0;
+            const note = document.getElementById('expense-note').value;
+            
+            if (amount <= 0) return alert('Enter valid amount');
+            
+            data.expenses.unshift({
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                category: category,
+                amount: amount,
+                note: note || ''
+            });
+            
+            saveData();
+            renderRecentActivity();
+            alert('Expense logged successfully');
+            
+            document.getElementById('expense-amount').value = '';
+            document.getElementById('expense-note').value = '';
+        }
+        
+        function renderRecentActivity() {
+            const container = document.getElementById('recent-activity');
+            let html = '';
+            
+            const all = [
+                ...data.expenses.slice(0, 5).map(e => ({...e, type: 'expense'})),
+                ...data.productions.slice(0, 3).map(p => ({...p, type: 'production'})),
+                ...data.sales.slice(0, 3).map(s => ({...s, type: 'sale'}))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 8);
+            
+            if (all.length === 0) {
+                container.innerHTML = '<p class="text-center text-zinc-400 py-4">No activity yet. Start logging above.</p>';
+                return;
+            }
+            
+            all.forEach(item => {
+                let icon = '', text = '';
+                if (item.type === 'expense') {
+                    icon = '<i class="fa-solid fa-receipt text-red-500"></i>';
+                    text = `\( {item.category} - ₦ \){item.amount.toLocaleString()} ${item.note ? '(' + item.note + ')' : ''}`;
+                } else if (item.type === 'production') {
+                    icon = '<i class="fa-solid fa-industry text-amber-600"></i>';
+                    text = `Produced \( {item.breads} breads ( \){item.flourUsed || 0} bags flour used)`;
+                } else if (item.type === 'sale') {
+                    icon = '<i class="fa-solid fa-shopping-cart text-emerald-600"></i>';
+                    text = `Sold \( {item.breads} breads - Revenue ₦ \){item.revenue.toLocaleString()}`;
+                }
+                
+                html += `
+                    <div class="flex items-center justify-between py-2.5 border-b last:border-0 text-sm">
+                        <div class="flex items-center gap-x-3">
+                            ${icon}
+                            <span>${text}</span>
+                        </div>
+                        <span class="text-xs text-zinc-400">${item.date}</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Section switching
+        function showSection(section) {
+            // Hide all
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('nav-active', 'text-zinc-900'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.add('text-zinc-600'));
+            
+            // Show selected
+            document.getElementById('section-' + section).classList.add('active');
+            const tab = document.getElementById('tab-' + section);
+            tab.classList.add('nav-active', 'text-zinc-900');
+            tab.classList.remove('text-zinc-600');
+            
+            // Refresh data when switching
+            if (section === 'inventory') renderInventory();
+            if (section === 'reports') updateReports();
+            if (section === 'dashboard') updateDashboard();
+            if (section === 'logs') renderRecentActivity();
+        }
+        
+        function loadSampleData() {
+            if (!confirm('Load sample data? This will replace current data.')) return;
+            
+            data = {
+                inventory: [
+                    { id: Date.now(), name: "Flour (50kg bags)", stock: 18, unitCost: 27500, unit: "bag" },
+                    { id: Date.now() + 1, name: "Sugar", stock: 42, unitCost: 4800, unit: "kg" },
+                    { id: Date.now() + 2, name: "Yeast", stock: 6, unitCost: 13500, unit: "kg" },
+                    { id: Date.now() + 3, name: "Vegetable Oil", stock: 15, unitCost: 8500, unit: "litre" }
+                ],
+                expenses: [
+                    { id: Date.now() - 1000, date: "2026-01-15", category: "Electricity", amount: 62000, note: "Monthly bill" },
+                    { id: Date.now() - 2000, date: "2026-01-10", category: "Staff Salary", amount: 280000, note: "January salaries" }
+                ],
+                productions: [
+                    { id: Date.now() - 500, date: "2026-01-18", breads: 720, flourUsed: 6 }
+                ],
+                sales: [
+                    { id: Date.now() - 300, date: "2026-01-18", breads: 695, revenue: 590750 }
+                ],
+                settings: {
+                    flourCostPerBag: 27500,
+                    breadsPerBag: 125,
+                    otherCostPerBread: 195,
+                    sellingPricePerBread: 850,
+                    monthlyElectricity: 62000,
+                    monthlyTransport: 48000,
+                    monthlyStaff: 280000,
+                    estimatedBreadsPerMonth: 5200
+                }
+            };
+            
+            saveData();
+            loadSettingsIntoForm();
+            renderInventory();
+            updateDashboard();
+            updateReports();
+            renderRecentActivity();
+            
+            alert('Sample data loaded! Explore the different tabs.');
+        }
+        
+        function resetAllData() {
+            if (!confirm('Delete ALL data? This cannot be undone.')) return;
+            localStorage.removeItem('bakeryData');
+            location.reload();
+        }
+        
+        // Initialize everything
+        function initializeApp() {
+            initializeTailwind();
+            loadData();
+            loadSettingsIntoForm();
+            
+            // Initial renders
+            renderInventory();
+            updateDashboard();
+            updateReports();
+            renderRecentActivity();
+            
+            // Show dashboard by default
+            document.getElementById('section-dashboard').classList.add('active');
+            
+            // Make settings inputs update live
+            const inputs = document.querySelectorAll('#section-costs input');
+            inputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    updateSettings();
+                });
+            });
+            
+            // Keyboard hint
+            console.log('%c[BakeTrack] App initialized successfully. All data is saved locally.', 'color:#854d0e');
+        }
+        
+        // Boot app
+        window.onload = initializeApp;
+    </script>
+</body>
+</html>
