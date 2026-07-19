@@ -12,7 +12,6 @@
         .section.active { display: block; }
         .nav-tab.active { background-color: #fefce8; color: #c2410f; border-bottom: 3px solid #c2410f; font-weight: 600; }
         .input { width: 100%; padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 16px; font-size: 17px; }
-        .big-number { font-size: 28px; font-weight: 700; }
         .helper-text { font-size: 12px; color: #854d0e; }
     </style>
 </head>
@@ -50,16 +49,15 @@
                     </select>
                 </div>
 
-                <!-- Daily Form -->
                 <div id="daily-form-section">
                     <div class="mb-4">
                         <label class="text-sm">Date</label>
-                        <input type="date" id="log-date" class="input">
+                        <input type="date" id="log-date" class="input" onchange="loadDailyEntry()">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div><label class="text-sm">Breads Made</label><input id="daily-made" type="number" value="0" class="input"></div>
-                        <div><label class="text-sm">Breads Sold</label><input id="daily-sold" type="number" value="0" class="input"></div>
+                        <div><label class="text-sm">Breads Made</label><input id="daily-made" type="number" value="0" class="input" oninput="calculateDailyProfit()"></div>
+                        <div><label class="text-sm">Breads Sold</label><input id="daily-sold" type="number" value="0" class="input" oninput="calculateDailyProfit()"></div>
                     </div>
 
                     <div class="mb-4">
@@ -67,11 +65,9 @@
                         <input id="daily-flour" type="number" value="0" class="input">
                     </div>
 
-                    <!-- Ingredients -->
                     <div class="mb-4">
                         <h4 class="font-medium mb-1">Ingredients Used Today (₦)</h4>
-                        <p class="helper-text mb-2">Estimate what you used today. Example: If one yeast pack = ₦4,000 and you used ¼ today, enter ₦1,000.</p>
-                        
+                        <p class="helper-text mb-2">Estimate portion used today (e.g. ¼ pack = ¼ of cost).</p>
                         <div class="grid grid-cols-2 gap-3">
                             <input id="daily-sugar" placeholder="Sugar" type="number" value="0" class="input">
                             <input id="daily-yeast" placeholder="Yeast" type="number" value="0" class="input">
@@ -88,7 +84,7 @@
 
                     <div class="mb-4">
                         <label class="text-sm">Selling Price per Bread (₦)</label>
-                        <input id="daily-price" type="number" value="850" class="input">
+                        <input id="daily-price" type="number" value="850" class="input" oninput="calculateDailyProfit()">
                     </div>
 
                     <div>
@@ -104,14 +100,14 @@
                     </button>
                 </div>
 
-                <!-- Summary View -->
-                <div id="summary-view" class="hidden mt-6">
-                    <div id="summary-content"></div>
+                <div id="daily-profit-display" class="hidden mt-4 p-4 bg-emerald-50 rounded-3xl text-center">
+                    <div class="text-sm">Daily Profit</div>
+                    <div id="daily-profit" class="big-number text-emerald-700">₦0</div>
                 </div>
             </div>
         </div>
 
-        <!-- MONTHLY SUMMARY -->
+        <!-- MONTHLY & PROFIT sections (same as before) -->
         <div id="section-monthly" class="section">
             <div class="bg-white rounded-3xl p-5">
                 <h2 class="font-bold text-xl mb-4">Monthly Summary</h2>
@@ -119,7 +115,6 @@
             </div>
         </div>
 
-        <!-- PROFIT CALCULATOR -->
         <div id="section-profit" class="section">
             <div class="bg-white rounded-3xl p-6">
                 <h2 class="text-2xl font-bold mb-6">📈 Profit Calculator</h2>
@@ -156,81 +151,48 @@
     <script>
         let dailyEntries = JSON.parse(localStorage.getItem('dailyEntries') || '[]');
 
-        function saveDailyEntry() {
-            const date = document.getElementById('log-date').value || new Date().toISOString().split('T')[0];
-            const price = parseFloat(document.getElementById('daily-price').value) || 850;
-
-            const entry = {
-                date: date,
-                made: parseFloat(document.getElementById('daily-made').value) || 0,
-                sold: parseFloat(document.getElementById('daily-sold').value) || 0,
-                flourKg: parseFloat(document.getElementById('daily-flour').value) || 0,
-                sugar: parseFloat(document.getElementById('daily-sugar').value) || 0,
-                yeast: parseFloat(document.getElementById('daily-yeast').value) || 0,
-                flavor: parseFloat(document.getElementById('daily-flavor').value) || 0,
-                eggs: parseFloat(document.getElementById('daily-eggs').value) || 0,
-                otherIng: parseFloat(document.getElementById('daily-other-ing').value) || 0,
-                transport: parseFloat(document.getElementById('daily-transport').value) || 0,
-                gas: parseFloat(document.getElementById('daily-gas').value) || 0,
-                otherDesc: document.getElementById('daily-other-desc').value || '',
-                otherAmt: parseFloat(document.getElementById('daily-other-amt').value) || 0,
-                sellingPrice: price
-            };
-
-            const totalCost = entry.sugar + entry.yeast + entry.flavor + entry.eggs + entry.otherIng + 
-                              entry.transport + entry.gas + entry.otherAmt;
-            entry.dailyProfit = (entry.sold * price) - totalCost;
-
-            dailyEntries.push(entry);
-            localStorage.setItem('dailyEntries', JSON.stringify(dailyEntries));
-
-            alert(`✅ Day saved!\n\nDaily Profit: ₦${Math.round(entry.dailyProfit).toLocaleString()}`);
-
-            // Clear form
-            ['daily-made','daily-sold','daily-flour','daily-sugar','daily-yeast','daily-flavor','daily-eggs','daily-other-ing','daily-transport','daily-gas','daily-other-desc','daily-other-amt'].forEach(id => {
-                document.getElementById(id).value = '';
-            });
+        function getDateKey(dateStr) {
+            return dateStr;
         }
 
-        function changeViewMode() {
-            const mode = document.getElementById('view-mode').value;
-            const form = document.getElementById('daily-form-section');
-            const summary = document.getElementById('summary-view');
+        function loadDailyEntry() {
+            const date = document.getElementById('log-date').value;
+            if (!date) return;
 
-            if (mode === 'daily') {
-                form.classList.remove('hidden');
-                summary.classList.add('hidden');
+            const entry = dailyEntries.find(e => e.date === date);
+            
+            if (entry) {
+                document.getElementById('daily-made').value = entry.made || 0;
+                document.getElementById('daily-sold').value = entry.sold || 0;
+                document.getElementById('daily-flour').value = entry.flourKg || 0;
+                document.getElementById('daily-sugar').value = entry.sugar || 0;
+                document.getElementById('daily-yeast').value = entry.yeast || 0;
+                document.getElementById('daily-flavor').value = entry.flavor || 0;
+                document.getElementById('daily-eggs').value = entry.eggs || 0;
+                document.getElementById('daily-other-ing').value = entry.otherIng || 0;
+                document.getElementById('daily-transport').value = entry.transport || 0;
+                document.getElementById('daily-gas').value = entry.gas || 0;
+                document.getElementById('daily-price').value = entry.sellingPrice || 850;
+                document.getElementById('daily-other-desc').value = entry.otherDesc || '';
+                document.getElementById('daily-other-amt').value = entry.otherAmt || 0;
             } else {
-                form.classList.add('hidden');
-                summary.classList.remove('hidden');
-                showSummary(mode);
+                // Clear for new date
+                ['daily-made','daily-sold','daily-flour','daily-sugar','daily-yeast','daily-flavor','daily-eggs','daily-other-ing','daily-transport','daily-gas','daily-other-desc','daily-other-amt'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                document.getElementById('daily-price').value = 850;
             }
+            calculateDailyProfit();
         }
 
-        function showSummary(mode) {
-            const container = document.getElementById('summary-content');
-            container.innerHTML = '';
-
-            const now = new Date();
-            let filtered = dailyEntries.filter(e => {
-                const d = new Date(e.date);
-                if (mode === 'weekly') {
-                    const startOfWeek = new Date(now);
-                    startOfWeek.setDate(now.getDate() - now.getDay());
-                    return d >= startOfWeek;
-                } else {
-                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                }
-            });
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-zinc-400">No entries for this ${mode} yet.</p>`;
+        function saveDailyEntry() {
+            const date = document.getElementById('log-date').value;
+            if (!date) {
+                alert("Please select a date");
                 return;
             }
 
-            let totals = { made: 0, sold: 0, totalCost: 0, profit: 0 };
-            filtered.forEach(e => {
-                totals.made += e.made;
+            const price = parseFloat(document.getElementById('daily-price').value) ||                totals.made += e.made;
                 totals.sold += e.sold;
                 const cost = e.sugar + e.yeast + e.flavor + e.eggs + e.otherIng + e.transport + e.gas + e.otherAmt;
                 totals.totalCost += cost;
